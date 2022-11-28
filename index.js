@@ -60,23 +60,26 @@ const createMatrixUseCell = (matrix) => {
 }
 
 const createMatrixZeros = (matrix) => {
-    return matrix.map(line => line.map(element => 0));
+    return matrix.map(line => line.map(element => ""));
 }
 
-const isNotOver = (matrix) => {
+const isNotOver = (values) => {
     let result = false;
 
-    for (let i = 0; i < matrix.length; i++) {
-        for (let j = 0; j < matrix[i].length; j++) {
-            result = (result !== null || result === 0) || matrix[i][j];
+    for (let i = 0; i < values.length; i++) {
+        for (let j = 0; j < values[i].length; j++) {
+            result = result || values[i][j] !== null || values[i][j] === "";
+            if (result) {
+                return true;
+            }
         }
     }
 
     return result; 
 }
 
-const transportAlgorithm = (values, a, b, result) => {
-
+const transportAlgorithm = (values, coefs, a, b) => {
+    
 }
 
 const a = [14, 25, 56, 45];
@@ -104,7 +107,7 @@ printMatrix(values, coefs, a, b);
 
 
 while (isNotOver(values)) {
-
+    transportAlgorithm(values, coefs, a, b);
 
     console.log("-----------------------------------------------------------------------------------------")
     printMatrix(values, coefs, a, b);
