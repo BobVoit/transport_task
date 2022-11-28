@@ -1,5 +1,5 @@
 const colors = require("colors");
-
+const Cell = require("./Cell");
 
 const getSum = (arr) => {
     let sum = 0;
@@ -9,16 +9,19 @@ const getSum = (arr) => {
     return sum;
 }
 
-
-const getMinElement = (matrix) => {
+const getMinElementCoef = (matrix) => {
     let resI = 0;
     let resJ = 0;
-    let resValue = 0;
+    let resValue = Number.MAX_VALUE;
 
     for (let i = 0; i < matrix.length; i++) {
         for (let j = 0; j < matrix[i].length; j++) {
-            if (resValue < matrix[i][j]) {
-                resValue = matrix[i][j];
+            if (!matrix[i][j].isUse) {
+                continue;
+            }
+
+            if (resValue > matrix[i][j].coef) {
+                resValue = matrix[i][j].coef;
                 resI = i;
                 resJ = j;
             }
@@ -32,7 +35,20 @@ const getMinElement = (matrix) => {
     };
 }
 
-const printMatrix = (values, coefs, a, b) => {
+const getPower = (data) => {
+    let sum = 0;
+    for (let i = 0; i < data.length; i++) {
+        for (let j = 0; j < data[i].length; j++) {
+            if (!data[i][j].isUnavailable) {
+                sum += data[i][j].value * data[i][j].coef
+            }
+        }
+    }
+
+    return sum;
+}
+
+const printMatrix = (values, a, b) => {
 
     for (let i = 0; i < values.length; i++) {
         let line = "";
@@ -44,7 +60,7 @@ const printMatrix = (values, coefs, a, b) => {
                 isFirst = false;
             }
 
-            line += (values[i][j] === null ? "-" : `${values[i][j]}(${coefs[i][j]})`);
+            line += values[i][j].toString();
         }
 
         line += "\t" + colors.blue(a[i]);
@@ -54,44 +70,73 @@ const printMatrix = (values, coefs, a, b) => {
     console.log(colors.green(b.join("\t")));
 }
 
-
-const createMatrixUseCell = (matrix) => {
-    return matrix.map(line => line.map(element => true));
-}
-
-const createMatrixZeros = (matrix) => {
-    return matrix.map(line => line.map(element => ""));
-}
-
 const isNotOver = (values) => {
-    let result = false;
-
     for (let i = 0; i < values.length; i++) {
         for (let j = 0; j < values[i].length; j++) {
-            result = result || values[i][j] !== null || values[i][j] === "";
-            if (result) {
+            if (values[i][j].isUse) {
                 return true;
             }
         }
     }
-
-    return result; 
+    return false; 
 }
 
-const transportAlgorithm = (values, coefs, a, b) => {
+const valuesToObjectsCell = (values) => {
+    return values.map(line => line.map(element => new Cell(element)));
+}
+
+const transportAlgorithm = (data, a, b) => {
+    const minObj = getMinElementCoef(data); 
     
+    const currentI = minObj.i;
+    const currentJ = minObj.j;
+    
+    console.log(`(${currentI}; ${currentJ})`);
+
+    const aValue = a[currentI];
+    const bValue = b[currentJ];
+
+    if (aValue > bValue) {
+        data[currentI][currentJ].setValue(bValue);
+        a[currentI] -= bValue;
+
+        for (let i = 0; i < data.length; i++) {
+            if (i === currentI || !data[i][currentJ].isUse) {
+                continue;
+            }
+
+            data[i][currentJ].setIsUnavailable(true);
+            data[i][currentJ].setIsUse(false);
+        }
+    } else {
+        data[currentI][currentJ].setValue(aValue);
+        b[currentJ] -= aValue;
+
+        for (let j = 0; j < data[currentI].length; j++) {
+            if (j === currentJ || !data[currentI][j].isUse) {
+                continue;
+            }
+
+            data[currentI][j].setIsUnavailable(true);
+            data[currentI][j].setIsUse(false);
+        }
+    }
+
+    data[currentI][currentJ].setIsUse(false);
+
 }
 
 const a = [14, 25, 56, 45];
 const b = [40, 40, 20, 10, 30];
 
-let coefs = [
+const values = [
     [10, 16, 3, 8, 5],
     [3, 14, 12, 9, 1],
     [2, 20, 4, 11, 5],
     [7, 17, 13, 8, 15]
 ];
 
+let data = valuesToObjectsCell(values);
 
 const sumA = getSum(a);
 const sumB = getSum(b);
@@ -100,15 +145,14 @@ if (sumA === sumB) {
     console.log("Закрытая");
 }
 
+printMatrix(data, a, b);
 
-const values = createMatrixZeros(coefs);
-
-printMatrix(values, coefs, a, b);
-
-
-while (isNotOver(values)) {
-    transportAlgorithm(values, coefs, a, b);
-
-    console.log("-----------------------------------------------------------------------------------------")
-    printMatrix(values, coefs, a, b);
+while (isNotOver(data)) {
+    transportAlgorithm(data, a, b);
+    // printMatrix(data, a, b);
+    // break;
+    printMatrix(data, a, b);
+    console.log("-----------------------------------------------------------------------------------------");
 }
+
+console.log("F = " + getPower(data));
