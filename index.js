@@ -126,7 +126,13 @@ const transportAlgorithm = (data, a, b) => {
 
 }
 
-const a = [14, 25, 56, 45];
+const a = [
+    14, 
+    25, 
+    56, 
+    45
+];
+
 const b = [40, 40, 20, 10, 30];
 
 const values = [
