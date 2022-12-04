@@ -4,10 +4,15 @@ class Cell {
         this.value = value;
         this.isUse = true;
         this.isUnavailable = false;
+        this.sign = "";
     }
 
-    toString() {
-        return this.isUnavailable ? "-" : `${this.value}(${this.coef})`;
+    toString(isUnavailableUse = true) {
+        if (isUnavailableUse) {
+            return this.isUnavailable ? "-" : `${this.value}(${this.coef})[${this.sign}]`;
+        } else {
+            return `${this.value}(${this.coef})${this.sign && ("[" + this.sign + "]")}`;
+        }
     }
 
     setIsUnavailable(isUnavailable) {

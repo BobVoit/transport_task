@@ -1,6 +1,13 @@
 const colors = require("colors");
 const Cell = require("./Cell");
 
+const Actions = {
+    UP: "UP",
+    DOWN: "DOWN",
+    LEFT: "LEFT",
+    RIGHT: "RIGHT"
+}
+
 const getSum = (arr) => {
     let sum = 0;
     for (let i = 0; i < arr.length; i++) {
@@ -40,7 +47,7 @@ const getPower = (data) => {
     for (let i = 0; i < data.length; i++) {
         for (let j = 0; j < data[i].length; j++) {
             if (!data[i][j].isUnavailable) {
-                sum += data[i][j].value * data[i][j].coef
+                sum += data[i][j].value * data[i][j].coef;
             }
         }
     }
@@ -48,7 +55,7 @@ const getPower = (data) => {
     return sum;
 }
 
-const printMatrix = (values, a, b) => {
+const printMatrix = (values, a, b, showNotUse = true) => {
 
     for (let i = 0; i < values.length; i++) {
         let line = "";
@@ -60,7 +67,7 @@ const printMatrix = (values, a, b) => {
                 isFirst = false;
             }
 
-            line += values[i][j].toString();
+            line += values[i][j].toString(showNotUse);
         }
 
         line += "\t" + colors.blue(a[i]);
@@ -79,6 +86,12 @@ const isNotOver = (values) => {
         }
     }
     return false; 
+}
+
+const clearSign = (data) => {
+    data.forEach(line => line.forEach(element => {
+        element.sign = "";
+    }));
 }
 
 const valuesToObjectsCell = (values) => {
@@ -126,21 +139,191 @@ const transportAlgorithm = (data, a, b) => {
 
 }
 
+const arrayHaveNull = (arr) => {
+    for (let i = 0; i < arr.length; i++) {
+        if (arr[i] === null) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+const potentials = (data, a1, b1) => {
+    a1[0] = 0;
+    while (arrayHaveNull(a1) && arrayHaveNull(b1)) {
+        for (let i = 0; i < data.length; i++) {
+            for (let j = 0; j < data[i].length; j++) {
+                if (!data[i][j].isUnavailable) {
+                    const a1Value = a1[i];
+                    const b1Value = b1[j];
+                    const currentValue = data[i][j].coef;
+                    if (a1Value === null && b1Value !== null) {
+                        a1[i] = currentValue - b1Value;
+                    } else if (a1Value !== null && b1Value === null) {
+                        b1[j] = currentValue - a1Value;
+                    }
+                }  
+            }
+        }  
+    }
+}
+
+const copyArrayOfPoints = (arr) => {
+    return arr.map(point => ({ ...point }));
+}
+
+const findCycleRecursion = (data, iValue, jValue, points, action) => {
+    
+    if (iValue >= data.length || iValue < 0) {
+        return null;
+    }
+
+    if (jValue >= data[iValue].length || jValue < 0) {
+        return null;
+    }
+
+    let result = null;
+    if (data[iValue][jValue].isUnavailable) {
+
+        let i = 0;
+        let j = 0;
+        if (action === Actions.UP) {
+            i = iValue;
+            j = jValue - 1;
+        } else if (action === Actions.DOWN) {
+            i = iValue;
+            j = jValue + 1;
+        } else if (action === Actions.LEFT) {
+            i = iValue - 1;
+            j = jValue;
+        } else if (action === Actions.RIGHT) {
+            i = iValue + 1;
+            j = jValue;
+        }
+        result = findCycleRecursion(data, i, j, copyArrayOfPoints(points), Actions.LEFT);
+    } else {
+        points.push({ i: iValue, j: jValue });
+ 
+        if (action !== Actions.LEFT) {
+            result = findCycleRecursion(data, iValue - 1, jValue, copyArrayOfPoints(points), Actions.LEFT);
+            if (result !== null) {
+                return result;
+            }
+        }
+
+        if (action !== Actions.RIGHT) {
+            result = findCycleRecursion(data, iValue + 1, jValue, copyArrayOfPoints(points), Actions.RIGHT);
+            if (result !== null) {
+                return result;
+            }
+        }
+
+        if (action !== Actions.UP) {
+            result = findCycleRecursion(data, iValue, jValue - 1, copyArrayOfPoints(points), Actions.UP);
+            if (result !== null) {
+                return result;
+            }
+        }
+
+        if (action !== Actions.DOWN) {
+            result = findCycleRecursion(data, iValue, jValue + 1, copyArrayOfPoints(points), Actions.DOWN);
+            if (result !== null) {
+                return result;
+            }
+        }
+    }
+
+    return null;
+
+}
+
+const findCycle = (data, iValue, jValue) => {
+
+    const points = [
+        { i: iValue, j: jValue }
+    ];
+
+    let result = null;
+    result = findCycleRecursion(data, iValue - 1, jValue, copyArrayOfPoints(points), Actions.LEFT);
+    if (result !== null) {
+        return result;
+    }
+
+    result = findCycleRecursion(data, iValue + 1, jValue, copyArrayOfPoints(points), Actions.RIGHT);
+    if (result !== null) {
+        return result;
+    }
+
+    result = findCycleRecursion(data, iValue, jValue - 1, copyArrayOfPoints(points), Actions.UP);
+    if (result !== null) {
+        return result;
+    }
+
+    result = findCycleRecursion(data, iValue, jValue + 1, copyArrayOfPoints(points), Actions.DOWN);
+    if (result !== null) {
+        return result;
+    }
+
+    return null;
+}
+
+const optimisation = (data, a1, b1) => {
+
+    for (let i = 0; i < a1.length; i++) {
+        a1[i] = null;
+    }
+    for (let i = 0; i < b1.length; i++) {
+        b1[i] = null;
+    }
+
+    potentials(data, a1, b1);
+
+    let maxValue = Number.MIN_VALUE;
+    let iValue = 0;
+    let jValue = 0;
+    for (let i = 0; i < data.length; i++) {
+        for (let j = 0; j < data[i].length; j++) {
+            if (data[i][j].isUnavailable) {
+                const a1Value = a1[i];
+                const b1Value = b1[j];
+                const value =  a1Value + b1Value - data[i][j].coef;
+                if (value >= 0) {
+                    if (value > maxValue) {
+                        maxValue = value;
+                        iValue = i;
+                        jValue = j;
+                    }
+                }
+            }  
+        }
+    }
+
+    // data[iValue][jValue].sign = "+";
+
+    const peaks = findCycle(data, iValue, jValue)
+
+    const g = 1;
+}
+
 const a = [
-    14, 
-    25, 
-    56, 
-    45
+    28, 
+    13, 
+    15, 
+    30
 ];
 
-const b = [40, 40, 20, 10, 30];
+const b = [27, 16, 25, 11, 7];
 
 const values = [
-    [10, 16, 3, 8, 5],
-    [3, 14, 12, 9, 1],
-    [2, 20, 4, 11, 5],
-    [7, 17, 13, 8, 15]
+    [2, 24, 4, 2, 3],
+    [20, 10, 15, 27, 7],
+    [15, 15, 12, 25, 19],
+    [2, 6, 3, 5, 5]
 ];
+
+const a1 = [null, null, null, null];
+const b1 = [null, null, null, null, null];
 
 let data = valuesToObjectsCell(values);
 
@@ -155,10 +338,16 @@ printMatrix(data, a, b);
 
 while (isNotOver(data)) {
     transportAlgorithm(data, a, b);
-    // printMatrix(data, a, b);
-    // break;
     printMatrix(data, a, b);
     console.log("-----------------------------------------------------------------------------------------");
 }
 
 console.log("F = " + getPower(data));
+
+
+console.log("-----------------------------------------------------------------------------------------");
+console.log("Оптимизация");
+
+//potentials(data, a1, b1);
+optimisation(data, a, b);
+printMatrix(data, a1, b1, false);
