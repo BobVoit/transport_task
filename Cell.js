@@ -9,9 +9,9 @@ class Cell {
 
     toString(isUnavailableUse = true) {
         if (isUnavailableUse) {
-            return this.isUnavailable ? "-" : `${this.value}(${this.coef})[${this.sign}]`;
+            return this.isUnavailable ? `-${this.sign && ("|" + this.sign)}` : `${this.value}(${this.coef})${this.sign && ("|" + this.sign)}`;
         } else {
-            return `${this.value}(${this.coef})${this.sign && ("[" + this.sign + "]")}`;
+            return `${this.value}(${this.coef})${this.sign && ("|" + this.sign)}`;
         }
     }
 

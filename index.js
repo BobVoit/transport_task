@@ -8,6 +8,8 @@ const Actions = {
     RIGHT: "RIGHT"
 }
 
+let mainCounter = 0;
+
 const getSum = (arr) => {
     let sum = 0;
     for (let i = 0; i < arr.length; i++) {
@@ -173,7 +175,11 @@ const copyArrayOfPoints = (arr) => {
     return arr.map(point => ({ ...point }));
 }
 
-const findCycleRecursion = (data, iValue, jValue, points, action) => {
+const findCycleRecursion = (data, iValue, jValue, points, action, startPoint) => {
+
+    if (iValue === startPoint.i && jValue === startPoint.j) {
+        return points;
+    }
     
     if (iValue >= data.length || iValue < 0) {
         return null;
@@ -201,33 +207,33 @@ const findCycleRecursion = (data, iValue, jValue, points, action) => {
             i = iValue + 1;
             j = jValue;
         }
-        result = findCycleRecursion(data, i, j, copyArrayOfPoints(points), Actions.LEFT);
+        result = findCycleRecursion(data, i, j, copyArrayOfPoints(points), Actions.LEFT, startPoint);
     } else {
         points.push({ i: iValue, j: jValue });
  
         if (action !== Actions.LEFT) {
-            result = findCycleRecursion(data, iValue - 1, jValue, copyArrayOfPoints(points), Actions.LEFT);
+            result = findCycleRecursion(data, iValue + 1, jValue, copyArrayOfPoints(points), Actions.RIGHT, startPoint);
             if (result !== null) {
                 return result;
             }
         }
 
         if (action !== Actions.RIGHT) {
-            result = findCycleRecursion(data, iValue + 1, jValue, copyArrayOfPoints(points), Actions.RIGHT);
+            result = findCycleRecursion(data, iValue - 1, jValue, copyArrayOfPoints(points), Actions.LEFT, startPoint);
             if (result !== null) {
                 return result;
             }
         }
 
         if (action !== Actions.UP) {
-            result = findCycleRecursion(data, iValue, jValue - 1, copyArrayOfPoints(points), Actions.UP);
+            result = findCycleRecursion(data, iValue, jValue + 1, copyArrayOfPoints(points), Actions.DOWN, startPoint);
             if (result !== null) {
                 return result;
             }
         }
 
         if (action !== Actions.DOWN) {
-            result = findCycleRecursion(data, iValue, jValue + 1, copyArrayOfPoints(points), Actions.DOWN);
+            result = findCycleRecursion(data, iValue, jValue - 1, copyArrayOfPoints(points), Actions.UP, startPoint);
             if (result !== null) {
                 return result;
             }
@@ -240,32 +246,84 @@ const findCycleRecursion = (data, iValue, jValue, points, action) => {
 
 const findCycle = (data, iValue, jValue) => {
 
+    const startPoint = { i: iValue, j: jValue };
     const points = [
-        { i: iValue, j: jValue }
+        startPoint
     ];
 
     let result = null;
-    result = findCycleRecursion(data, iValue - 1, jValue, copyArrayOfPoints(points), Actions.LEFT);
+    result = findCycleRecursion(data, iValue - 1, jValue, copyArrayOfPoints(points), Actions.LEFT, startPoint);
     if (result !== null) {
         return result;
     }
 
-    result = findCycleRecursion(data, iValue + 1, jValue, copyArrayOfPoints(points), Actions.RIGHT);
+    result = findCycleRecursion(data, iValue + 1, jValue, copyArrayOfPoints(points), Actions.RIGHT, startPoint);
     if (result !== null) {
         return result;
     }
 
-    result = findCycleRecursion(data, iValue, jValue - 1, copyArrayOfPoints(points), Actions.UP);
+    result = findCycleRecursion(data, iValue, jValue - 1, copyArrayOfPoints(points), Actions.UP, startPoint);
     if (result !== null) {
         return result;
     }
 
-    result = findCycleRecursion(data, iValue, jValue + 1, copyArrayOfPoints(points), Actions.DOWN);
+    result = findCycleRecursion(data, iValue, jValue + 1, copyArrayOfPoints(points), Actions.DOWN, startPoint);
     if (result !== null) {
         return result;
     }
 
     return null;
+}
+
+const findCycle2 = (data, iValue, jValue, ijArray) => {
+    mainCounter = data.length * data[iValue].length;
+    return findCycleHorizontal(data, iValue, jValue, ijArray, iValue, jValue);
+}
+
+const findCycleHorizontal = (data, iValue, jValue, ijArray, iStart, jStart) => {
+    mainCounter--;
+    if (mainCounter === 0) {
+        throw new Error("Много итераций в цикле");
+    }
+    for (let j = 0; j < data[iValue].length; j++) {
+        if (j === jValue) {
+            continue;
+        }
+        if (data[iValue][j].isUnavailable) {
+            continue;
+        }
+        if (findCycleVertical(data, iValue, j, ijArray, iStart, jStart)) {
+            // iArray.push(iValue);
+            // jArray.push(j);
+            ijArray.push({ i: iValue, j: j });
+            return true;
+        }
+    }
+    return false;
+}
+
+const findCycleVertical = (data, iValue, jValue, ijArray, iStart, jStart) => {
+    for (let i = 0; i < data.length; i++) {
+        if (i === iStart && jStart === jValue) {
+            // iArray.push(iValue);
+            // jArray.push(jValue);
+            ijArray.push({ i: i, j: jValue });
+            return true;
+        }
+        if (i === iValue) {
+            continue;
+        }
+        if (data[i][jValue].isUnavailable) {
+            continue;
+        }
+        if (findCycleHorizontal(data, i, jValue, ijArray, iStart, jStart)) {
+            // iArray.push(i);
+            // jArray.push(jValue);
+            ijArray.push({ i: i, j: jValue });
+            return true;
+        }
+    }  
+    return false;  
 }
 
 const optimisation = (data, a1, b1) => {
@@ -280,8 +338,8 @@ const optimisation = (data, a1, b1) => {
     potentials(data, a1, b1);
 
     let maxValue = Number.MIN_VALUE;
-    let iValue = 0;
-    let jValue = 0;
+    let iValue = null;
+    let jValue = null;
     for (let i = 0; i < data.length; i++) {
         for (let j = 0; j < data[i].length; j++) {
             if (data[i][j].isUnavailable) {
@@ -299,11 +357,50 @@ const optimisation = (data, a1, b1) => {
         }
     }
 
+    if (iValue === null || jValue === null) {
+        return;
+    }
+
     // data[iValue][jValue].sign = "+";
 
-    const peaks = findCycle(data, iValue, jValue)
+    const peaks = [];
+    // const ijArray = [];
+    findCycle2(data, iValue, jValue, peaks);
 
-    const g = 1;
+    let currentSign = true;
+    let minValue = Number.MAX_VALUE;
+    let iMin = 0;
+    let jMin = 0;
+    peaks.forEach(element => {
+        data[element.i][element.j].sign = currentSign ? "+" : "-";
+        if (!currentSign && minValue > data[element.i][element.j].value) {
+            minValue = data[element.i][element.j].value;
+            iMin = element.i;
+            jMin = element.j;
+        }
+        data[element.i][element.j].setIsUnavailable(false);
+        currentSign = !currentSign;
+    });
+
+    data[iMin][jMin].setIsUnavailable(true); 
+
+    peaks.forEach(element => {
+        const currentElement = data[element.i][element.j];
+        if (currentElement.sign === "+") {
+            currentElement.value += minValue;
+        } else if (currentElement.sign === "-") {
+            currentElement.value -= minValue;
+        }
+    });
+
+    clearSign(data);
+
+    optimisation(data, a1, b1);
+
+    // const iArray = [];
+    // const jArray = [];
+
+    const g = 4;
 }
 
 const a = [
@@ -350,4 +447,5 @@ console.log("Оптимизация");
 
 //potentials(data, a1, b1);
 optimisation(data, a, b);
-printMatrix(data, a1, b1, false);
+printMatrix(data, a, b);
+console.log("F = " + getPower(data));
