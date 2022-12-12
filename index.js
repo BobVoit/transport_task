@@ -153,7 +153,10 @@ const arrayHaveNull = (arr) => {
 
 const potentials = (data, a1, b1) => {
     a1[0] = 0;
-    while (arrayHaveNull(a1) && arrayHaveNull(b1)) {
+    while (arrayHaveNull(a1) || arrayHaveNull(b1)) {
+        // console.log(a1);
+        // console.log(b1);
+        // printMatrix(data, a, b, true);
         for (let i = 0; i < data.length; i++) {
             for (let j = 0; j < data[i].length; j++) {
                 if (!data[i][j].isUnavailable) {
@@ -399,24 +402,38 @@ const optimisation = (data, a1, b1) => {
 
     // const iArray = [];
     // const jArray = [];
-
-    const g = 4;
 }
 
+// const a = [
+//     28, 
+//     13, 
+//     15, 
+//     30
+// ];
+
+// const b = [27, 16, 25, 11, 7];
+
+// const values = [
+//     [2, 24, 4, 2, 3],
+//     [20, 10, 15, 27, 7],
+//     [15, 15, 12, 25, 19],
+//     [2, 6, 3, 5, 5]
+// ];
+
 const a = [
-    28, 
-    13, 
-    15, 
-    30
+    17, 
+    14, 
+    21, 
+    43
 ];
 
-const b = [27, 16, 25, 11, 7];
+const b = [19, 22, 23, 17, 14];
 
 const values = [
-    [2, 24, 4, 2, 3],
-    [20, 10, 15, 27, 7],
-    [15, 15, 12, 25, 19],
-    [2, 6, 3, 5, 5]
+    [12, 11, 25, 17, 21],
+    [22, 18, 14, 8, 1],
+    [9, 13, 2, 28, 15],
+    [26, 21, 3, 4, 27]
 ];
 
 const a1 = [null, null, null, null];
@@ -447,5 +464,5 @@ console.log("Оптимизация");
 
 //potentials(data, a1, b1);
 optimisation(data, a, b);
-printMatrix(data, a, b);
+printMatrix(data, a, b, false);
 console.log("F = " + getPower(data));
